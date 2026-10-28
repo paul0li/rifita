@@ -34,8 +34,11 @@ cualquiera puede verificar.
 
 ## Cómo está hecha
 
-Supabase (login con Google, Postgres con RLS y `pg_cron`) y un frontend
-estático en hosting gratuito. Las razones están en [`docs/adr/`](docs/adr/).
+Con la menor cantidad de librerías posible: Supabase (login con Google,
+Postgres con RLS y `pg_cron`) y un frontend en TypeScript sin framework ni
+bundler, cuya única librería es `supabase-js`, servido como sitio estático. Así
+cualquiera puede leer el código que corre en su navegador. Las razones están en
+[`docs/adr/`](docs/adr/).
 
 ## Contribuir
 
