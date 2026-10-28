@@ -13,8 +13,10 @@ No es un negocio: sin comisiones, sin publicidad y **sin manejar pagos**. Quien
 compra transfiere directo a la organizadora; la app solo anota qué número está
 libre y cuál está pagado.
 
-Los nombres y contactos de quienes compran se cifran en el navegador. La clave
-viaja en el fragmento `#` del link y nunca llega al servidor.
+Los nombres y contactos de quienes compran se cifran en el navegador. Cada
+vendedora tiene su clave, que viaja en el fragmento `#` de su link y queda en
+sus dispositivos; nunca llega al servidor, así que quien administra Rifita no
+puede leer esos datos.
 
 Más en [`README.md`](README.md) y en la [especificación](docs/especificacion.md).
 
@@ -23,13 +25,12 @@ Más en [`README.md`](README.md) y en la [especificación](docs/especificacion.m
 - [`README.md`](README.md): qué hace la app y para quién.
 - [`docs/especificacion.md`](docs/especificacion.md): el comportamiento
   esperado, decidido hasta ahora, y las preguntas que siguen abiertas.
-- [`docs/adr/`](docs/adr/): registros de decisiones de arquitectura (ADR), una
-  decisión por archivo. Léelos antes de cambiar cómo funciona algo.
-  - [0001 — Una herramienta sin fines de lucro que no toca el dinero](docs/adr/0001-sin-fines-de-lucro-sin-pagos.md)
-  - [0002 — Licencia AGPL-3.0](docs/adr/0002-licencia-agpl.md)
-  - [0003 — Los datos de quienes compran se cifran en el navegador](docs/adr/0003-cifrado-en-el-navegador.md)
-  - [0004 — El sorteo lo hace la organizadora y es verificable](docs/adr/0004-sorteo-manual-verificable.md)
-  - [0005 — Supabase como backend](docs/adr/0005-supabase.md)
+- [`docs/plan.md`](docs/plan.md): estructura, esquema, RLS y el orden de las
+  rebanadas.
+- [`docs/adr/`](docs/adr/): registros de decisiones de arquitectura (ADR),
+  agrupados por decisión. Léelos antes de cambiar cómo funciona algo.
+  - [0001 — Decisiones iniciales](docs/adr/0001-decisiones-iniciales.md): producto,
+    licencia, privacidad, sorteo y stack.
 - `CLAUDE.local.md` / `AGENTS.local.md` (fuera de git, pueden no existir): datos
   de una instalación en particular. Léelos si existen; nunca los subas.
 
@@ -110,15 +111,46 @@ por qué y cómo se verificó (el comando que se corrió o lo que se miró).
 
 ### Decisiones (ADR)
 
-- Un archivo por decisión en `docs/adr/`, llamado `NNNN-titulo-en-kebab.md`,
-  numerado en orden. Copia la forma de uno existente: **Estado**, **Contexto**,
-  **Decisión**, **Consecuencias**, **Qué la revertiría**.
-- Escribe un ADR nuevo cuando una elección define cómo funciona el producto o el
-  código y alguien podría razonablemente haber elegido otra cosa.
-- No se reescribe la historia. Cuando una decisión deja de valer, se escribe un
-  ADR nuevo y el antiguo se marca `Reemplazado por NNNN`.
+- Los ADR viven en `docs/adr/`, llamados `NNNN-titulo-en-kebab.md` y
+  numerados en orden. Cada tema lleva **Contexto**, **Lo que se sopesó**,
+  **Decisión**, **Consecuencias** y **Qué la revertiría**; un ADR que agrupa
+  varios temas tiene una sección `##` por tema con esas subsecciones, y un solo
+  **Estado** arriba. Copia la forma del existente.
+- Escribe uno cuando una elección define cómo funciona el producto o el código
+  y alguien podría razonablemente haber elegido otra cosa.
+- **Los ADR se van agrupando por decisión.** Mientras una decisión se conversa
+  y se afina, todo va al ADR de su tema, aunque cambie mucho: lo descartado
+  pasa a «Lo que se sopesó» y la decisión se reescribe.
+- **Un ADR nuevo merece guardarse solo si pasó más de un día desde el
+  anterior.** Lo que se decide o se corrige antes de eso se agrupa en un ADR
+  existente, no en uno nuevo.
+- Un ADR con más de un día ya no se reescribe: cuando su decisión deja de
+  valer, se escribe uno nuevo y el antiguo se marca `Reemplazado por NNNN`.
 - Sin reglas de producto numeradas ni ids de criterios. Los tests se nombran
   por el comportamiento que prueban, y cambian cuando cambia lo que se quiere.
+
+### Código
+
+El espíritu es **la menor cantidad de librerías posible** (ver
+[Stack](docs/adr/0001-decisiones-iniciales.md#stack) en el ADR 0001). Toda la
+privacidad descansa en el código que corre en el navegador, y cada dependencia
+es código ajeno que corre ahí.
+
+- La única librería que carga el sitio es `supabase-js`, copiada a
+  `web/vendor/` con la versión fija. Agregar una dependencia, también de
+  desarrollo, se justifica en el PR: qué resuelve y por qué no bastan unas
+  líneas propias.
+- TypeScript estricto, compilado con `tsc`, sin bundler. `tsc --noEmit` limpio
+  antes de hacer commit. Los imports llevan extensión `.js`.
+- Solo `web/src/lib/api.ts` usa `supabase-js`; ningún otro módulo llama a
+  Supabase directamente.
+- Cada pantalla de `web/src/pantallas/` exporta una función que recibe el
+  estado y pinta. Los nodos se crean con `crear()` de `web/src/lib/dom.ts`.
+- **Nunca** `innerHTML`, `outerHTML`, `insertAdjacentHTML` ni `document.write`.
+  El texto va siempre con `textContent`. La CSP exige Trusted Types, así que un
+  uso que se escape falla en el navegador.
+- Tests con `node:test` (`node --test`), nombrados por el comportamiento que
+  prueban. El cifrado, el sorteo y `api.ts` siempre llevan tests.
 
 ### Privacidad y seguridad
 
