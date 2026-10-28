@@ -140,8 +140,11 @@ es código ajeno que corre ahí.
   `web/vendor/` con la versión fija. Agregar una dependencia, también de
   desarrollo, se justifica en el PR: qué resuelve y por qué no bastan unas
   líneas propias.
-- TypeScript estricto, compilado con `tsc`, sin bundler. `tsc --noEmit` limpio
-  antes de hacer commit. Los imports llevan extensión `.js`.
+- TypeScript estricto, compilado con `tsc`, sin bundler. Los imports llevan
+  extensión `.ts`; `tsc` la cambia a `.js` al compilar
+  (`rewriteRelativeImportExtensions`), y así los mismos archivos corren en Node
+  para los tests. Solo sintaxis que se pueda borrar (`erasableSyntaxOnly`): nada
+  de `enum` ni `namespace`.
 - Solo `web/src/lib/api.ts` usa `supabase-js`; ningún otro módulo llama a
   Supabase directamente.
 - Cada pantalla de `web/src/pantallas/` exporta una función que recibe el
@@ -149,8 +152,10 @@ es código ajeno que corre ahí.
 - **Nunca** `innerHTML`, `outerHTML`, `insertAdjacentHTML` ni `document.write`.
   El texto va siempre con `textContent`. La CSP exige Trusted Types, así que un
   uso que se escape falla en el navegador.
-- Tests con `node:test` (`node --test`), nombrados por el comportamiento que
-  prueban. El cifrado, el sorteo y `api.ts` siempre llevan tests.
+- Tests con `node:test`, nombrados por el comportamiento que prueban. El
+  cifrado y el sorteo siempre llevan tests.
+- Antes de hacer commit: `npm run revisar`, `npm test` y, si cambió la base de
+  datos, `npm run test:db`.
 
 ### Privacidad y seguridad
 

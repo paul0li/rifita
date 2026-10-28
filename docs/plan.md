@@ -16,7 +16,8 @@ rifita/
 │   │   ├── lib/cifrado.ts    ECDH P-256 + HKDF + AES-GCM con WebCrypto (ADR 0001, Privacidad)
 │   │   ├── lib/claves.ts     guardar claves en el dispositivo, leer y limpiar el `#`
 │   │   ├── lib/sorteo.ts     algoritmo determinista, compartido con la verificación
-│   │   ├── lib/router.ts     rutas por path con la History API
+│   │   ├── lib/rutas.ts      rutas por path
+│   │   ├── lib/navegacion.ts links internos y botón atrás con la History API
 │   │   ├── lib/dom.ts        `crear(etiqueta, atributos, hijos)`, siempre con `textContent`
 │   │   └── pantallas/        portada, panel, crear, rifa, organizar, vender,
 │   │                         verificar, legal
@@ -25,7 +26,7 @@ rifita/
 │   └── servir.ts             servidor local con `node:http` y respaldo a index.html
 ├── supabase/
 │   ├── migrations/           0001_esquema.sql, 0002_rls.sql, …
-│   ├── functions/            sortear/, dar_de_baja/
+│   ├── functions/            sortear/
 │   └── tests/                pgTAP, un archivo por tabla
 ├── docs/
 └── .github/workflows/ci.yml  tsc --noEmit, node --test, supabase test db
