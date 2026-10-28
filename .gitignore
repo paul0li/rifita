@@ -1,0 +1,18 @@
+.DS_Store
+*.bak
+.env
+.env.*
+!.env.example
+
+# Notas e instrucciones propias de una instalación: nunca se suben
+CLAUDE.local.md
+AGENTS.local.md
+
+# Frontend
+node_modules/
+dist/
+coverage/
+
+# Supabase local
+supabase/.branches/
+supabase/.temp/
