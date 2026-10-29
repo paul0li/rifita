@@ -16,3 +16,7 @@ coverage/
 # Supabase local
 supabase/.branches/
 supabase/.temp/
+
+# Generados
+web/dist/
+web/configuracion.js

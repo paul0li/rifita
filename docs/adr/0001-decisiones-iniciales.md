@@ -331,13 +331,15 @@ La app es chica: unas ocho pantallas, formularios y una grilla de números.
 
 **Supabase**: Auth con Google (solo el correo), Postgres con Row Level Security
 como única capa de permisos, `pg_cron` para avisos y borrados del ciclo de vida,
-y Edge Functions para el sorteo y la baja de cuenta.
+una Edge Function para el sorteo. La baja de cuenta es una función de
+Postgres (`dar_de_baja`), que borra la cuenta y, en cascada, sus rifas.
 
 #### Frontend
 
 - **TypeScript estricto, compilado con `tsc`, sin bundler.** `tsc` solo quita
-  los tipos: el JavaScript servido se lee igual que el fuente. Los imports
-  llevan extensión `.js`, como los piden los navegadores.
+  los tipos: el JavaScript servido se lee igual que el fuente. Los imports se
+  escriben con `.ts` y `tsc` los cambia a `.js`, así los mismos archivos corren
+  en el navegador y en Node para los tests.
 - **Sin framework.** Un router propio sobre la History API, con rutas por path
   (`/<uuid>`, `/<uuid>/vender`…), para dejar libre el fragmento `#`.
 - **Cada pantalla** es un módulo con una función que recibe el estado y lo

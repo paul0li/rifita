@@ -40,6 +40,32 @@ bundler, cuya única librería es `supabase-js`, servido como sitio estático. A
 cualquiera puede leer el código que corre en su navegador. Las razones están en
 [`docs/adr/`](docs/adr/).
 
+## Desarrollar
+
+Hace falta Node 22.15 o más nuevo, la [CLI de Supabase](https://supabase.com/docs/guides/local-development)
+y Docker (o algo compatible) corriendo.
+
+```bash
+npm install
+cp .env.example .env
+cp supabase/.env.example supabase/.env
+supabase start
+npm run servir
+```
+
+En `.env` va la clave pública que muestra `supabase start`. Para entrar con
+Google en local, crea un cliente OAuth de prueba en Google Cloud con
+`http://127.0.0.1:54321/auth/v1/callback` como URI de redirección y pon sus
+datos en `supabase/.env`. La app queda en `http://127.0.0.1:5180`.
+
+| Comando | Qué hace |
+|---|---|
+| `npm run servir` | Compila y sirve la app en local, con la misma CSP que producción |
+| `npm run revisar` | Revisa los tipos de todo el proyecto |
+| `npm test` | Tests de la app, con `node:test` |
+| `npm run test:db` | Tests de la base de datos (pgTAP) |
+| `npm run copiar-supabase` | Copia supabase-js a `web/vendor/` tras cambiar su versión |
+
 ## Contribuir
 
 Todo el proyecto, incluido el código, está en español. Antes de proponer un
