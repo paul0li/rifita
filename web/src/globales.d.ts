@@ -8,6 +8,8 @@ declare global {
   const RIFITA: {
     readonly supabaseUrl: string;
     readonly supabaseClave: string;
+    /** Correo para pedir el borrado de datos; puede venir vacío. */
+    readonly correoContacto: string;
   };
 }
 

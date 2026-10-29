@@ -20,7 +20,8 @@ if (!supabaseUrl || !supabaseClave) {
   process.exit(1);
 }
 
-const configuracion = { supabaseUrl, supabaseClave };
+const correoContacto = process.env.CORREO_CONTACTO ?? "";
+const configuracion = { supabaseUrl, supabaseClave, correoContacto };
 await writeFile(
   join(raiz, "web", "configuracion.js"),
   `// Generado por scripts/configurar.ts. No editar.\nconst RIFITA = Object.freeze(${JSON.stringify(configuracion)});\n`,

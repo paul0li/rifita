@@ -34,7 +34,7 @@ const csp = [
   "script-src 'self'",
   "style-src 'self'",
   "img-src 'self' data:",
-  `connect-src 'self' ${supabaseUrl}`,
+  `connect-src 'self' ${supabaseUrl} https://api.drand.sh https://drand.cloudflare.com`,
   "base-uri 'none'",
   "form-action 'self'",
   "frame-ancestors 'none'",
