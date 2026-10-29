@@ -8,6 +8,7 @@
   },
   "scripts": {
     "compilar": "tsc -p web/tsconfig.json && node --experimental-strip-types scripts/configurar.ts",
+    "publicar": "npm run compilar && node --experimental-strip-types scripts/publicar.ts",
     "revisar": "tsc -p web/tsconfig.json --noEmit && tsc -p tsconfig.json",
     "servir": "npm run compilar && node --experimental-strip-types web/servir.ts",
     "test": "node --experimental-strip-types --test \"web/tests/**/*.test.ts\"",

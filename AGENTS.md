@@ -27,6 +27,8 @@ Más en [`README.md`](README.md) y en la [especificación](docs/especificacion.m
   esperado, decidido hasta ahora, y las preguntas que siguen abiertas.
 - [`docs/plan.md`](docs/plan.md): estructura, esquema, RLS y el orden de las
   rebanadas.
+- [`docs/desplegar.md`](docs/desplegar.md): cómo ponerla en producción
+  (Supabase, Google y Cloudflare Pages).
 - [`docs/adr/`](docs/adr/): registros de decisiones de arquitectura (ADR),
   agrupados por decisión. Léelos antes de cambiar cómo funciona algo.
   - [0001 — Decisiones iniciales](docs/adr/0001-decisiones-iniciales.md): producto,

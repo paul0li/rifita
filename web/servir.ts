@@ -6,6 +6,7 @@
 import { createServer } from "node:http";
 import { readFile } from "node:fs/promises";
 import { extname, join, normalize } from "node:path";
+import { cabecerasDeSeguridad } from "../scripts/csp.ts";
 
 const raiz = import.meta.dirname;
 const puerto = Number(process.env.PUERTO ?? 5180);
@@ -29,17 +30,7 @@ const tipos: Record<string, string> = {
 // Solo se sirve lo que está en estas carpetas o es uno de estos archivos.
 const permitidos = ["/dist/", "/vendor/", "/estilos.css", "/configuracion.js"];
 
-const csp = [
-  "default-src 'self'",
-  "script-src 'self'",
-  "style-src 'self'",
-  "img-src 'self' data:",
-  `connect-src 'self' ${supabaseUrl} https://api.drand.sh https://drand.cloudflare.com`,
-  "base-uri 'none'",
-  "form-action 'self'",
-  "frame-ancestors 'none'",
-  "require-trusted-types-for 'script'",
-].join("; ");
+const cabeceras = cabecerasDeSeguridad(supabaseUrl);
 
 createServer(async (pedido, respuesta) => {
   const ruta = normalize(new URL(pedido.url ?? "/", "http://local").pathname);
@@ -50,7 +41,7 @@ createServer(async (pedido, respuesta) => {
     const contenido = await readFile(archivo);
     respuesta.writeHead(200, {
       "Content-Type": tipos[extname(archivo)] ?? "application/octet-stream",
-      "Content-Security-Policy": csp,
+      ...cabeceras,
       "Cache-Control": "no-store",
     });
     respuesta.end(contenido);
