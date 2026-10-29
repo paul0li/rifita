@@ -64,7 +64,10 @@ datos en `supabase/.env`. La app queda en `http://127.0.0.1:5180`.
 | `npm run revisar` | Revisa los tipos de todo el proyecto |
 | `npm test` | Tests de la app, con `node:test` |
 | `npm run test:db` | Tests de la base de datos (pgTAP) |
+| `npm run publicar` | Arma `publicado/`, lo que sirve Cloudflare Pages |
 | `npm run copiar-supabase` | Copia supabase-js a `web/vendor/` tras cambiar su versión |
+
+Para ponerla en internet, sigue [`docs/desplegar.md`](docs/desplegar.md).
 
 ## Contribuir
 

@@ -20,3 +20,4 @@ supabase/.temp/
 # Generados
 web/dist/
 web/configuracion.js
+publicado/

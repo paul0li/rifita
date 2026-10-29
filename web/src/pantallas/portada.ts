@@ -10,7 +10,7 @@ export const portada: Pantalla = ({ usuaria }) =>
     ]),
     usuaria
       ? crear("a", { class: "boton", href: "/panel" }, ["Ir a mis rifas"])
-      : botonEntrar("Crea tu rifa"),
+      : botonEntrar("Crea tu rifa", "/crear"),
     crear("ul", { class: "puntos" }, [
       crear("li", {}, ["Sin comisiones ni publicidad: la plata va directo a quien organiza."]),
       crear("li", {}, ["Los datos de quienes compran se cifran en tu teléfono."]),
@@ -18,12 +18,13 @@ export const portada: Pantalla = ({ usuaria }) =>
     ]),
   ]);
 
-export function botonEntrar(texto: string): HTMLButtonElement {
+/** Entra con Google y vuelve a `destino`; por defecto, a esta misma página. */
+export function botonEntrar(texto: string, destino = location.pathname): HTMLButtonElement {
   const boton = crear("button", { class: "boton", type: "button" }, [texto]);
   boton.addEventListener("click", async () => {
     boton.disabled = true;
     try {
-      await entrarConGoogle();
+      await entrarConGoogle(destino === "/" ? "/panel" : destino);
     } catch (error) {
       boton.disabled = false;
       alert(`No pudimos abrir el login de Google. ${String(error)}`);

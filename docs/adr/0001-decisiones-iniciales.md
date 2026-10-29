@@ -96,8 +96,8 @@ personales de terceros que no tienen cuenta en la app ni la eligieron. La Ley
 
 Lo que se quiere:
 
-- La organizadora ve a todos los compradores de su rifa; cada vendedora, solo a
-  los suyos.
+- La organizadora ve a todos los compradores de su rifa; cada vendedora, los
+  suyos.
 - **Quien administra Rifita no puede leer nombres ni contactos aunque
   quisiera**: ni mirando la base de datos ni entrando a la cuenta de alguien.
   Así nadie puede pensar que la app existe para juntar datos.
@@ -105,6 +105,8 @@ Lo que se quiere:
   copien los datos de transferencia y vean los números.
 - Tiene que funcionar en cualquier teléfono con navegador, también en los más
   antiguos.
+- La primera versión tiene que estar lista pronto, para una rifa real: lo más
+  simple que cumpla lo anterior.
 
 ### Lo que se sopesó
 
@@ -115,113 +117,104 @@ Lo que se quiere:
    servidor también puede derivarla. Además vencen cada hora. Con Google solo se
    puede hacer control de acceso, no cifrado. Descartado como clave; se usa
    como identidad.
-3. **Una sola clave por rifa en el link de la rifa** (`/<uuid>#k=…`). Deja fuera
-   al servidor, pero el link de la rifa tiene que ser público, y cualquiera que
-   lo recibiera podría leer los datos; además cada vendedora leería a los
-   compradores de las demás. Descartado.
+3. **Una clave en el link público de la rifa** (`/<uuid>#k=…`). El link público
+   se comparte con cualquiera, que podría leer los datos. Descartado.
 4. **Passkeys con la extensión PRF.** Muy seguras y sin links, pero exigen
-   teléfonos y navegadores recientes (iOS 18, Chrome moderno), y perder la
-   passkey es perder el acceso. Dejan fuera a parte de la gente. Descartado por
-   accesibilidad.
-5. **Una password elegida por cada persona.** Sirve en cualquier dispositivo,
-   pero la clave cifrada con la password quedaría en el servidor, y quien lo
-   administre podría adivinar las débiles («1234», cumpleaños). Además se olvida
-   entre una rifa y otra, y no puede haber «olvidé mi password». Descartado.
-6. **Una clave por vendedora, en un link personal, guardada en sus
-   dispositivos.** Deja fuera al servidor, funciona en cualquier navegador y no
-   hay nada que memorizar: el link queda en el WhatsApp de cada una. **Elegido.**
+   teléfonos y navegadores recientes, y perder la passkey es perder el acceso.
+   Descartado por accesibilidad.
+5. **Una password elegida por cada persona.** La clave cifrada con la password
+   quedaría en el servidor, y quien lo administre podría adivinar las débiles.
+   Además se olvida, y no puede haber «olvidé mi password». Descartado.
+6. **Un par de claves por vendedora** (ECDH), con cada venta cifrada para la
+   organizadora y para su vendedora. Una vendedora no podría leer jamás a los
+   compradores de otra, y se podría vender desde un dispositivo sin clave. Pero
+   suma claves públicas que verificar, copias cifradas para la organizadora y
+   bastante código. Queda como siguiente paso.
+7. **Una clave por rifa, en links personales que no son el público.** Deja
+   fuera al servidor, funciona en cualquier navegador, no hay nada que memorizar
+   y es poco código. **Elegido para la primera versión.**
 
 ### Decisión
 
 #### Identidad y clave son cosas distintas
 
-- **Google** dice quién eres. Con eso basta para ver la planilla, saber qué
-  números están pagados, anotar ventas nuevas y sortear, desde cualquier
-  dispositivo.
-- **La clave** permite leer nombres y contactos. Viaja en el fragmento `#` de un
-  link personal y queda guardada en el dispositivo donde se abre. El servidor
-  nunca la recibe.
+- **Google** dice quién eres y decide, con RLS, qué puedes hacer: ver tus
+  rifas, marcar números, sortear.
+- **La clave** permite leer y escribir nombres y contactos. Viaja en el
+  fragmento `#` de un link personal y queda guardada en el dispositivo donde se
+  abre. El servidor nunca la recibe.
 
-#### Las claves
+#### La clave
 
-WebCrypto con ECDH P-256 (disponible en teléfonos más antiguos que X25519),
-HKDF y AES-GCM.
-
-- Al crear la rifa, el navegador de la organizadora genera su par de claves. La
-  pública se guarda en el servidor; la privada, solo en su dispositivo y en su
-  **link de organizadora**.
-- Al invitar a una vendedora, el navegador de la organizadora genera un par para
-  ella. La pública se guarda en el servidor; la privada va en el **link de la
-  vendedora**, y además se guarda cifrada para la organizadora, que así puede
-  volver a copiar ese link cuando haga falta.
-- Cada venta se cifra con una clave al azar, y esa clave se cifra para dos
-  públicas: la de la organizadora y la de la vendedora a quien pertenece el
-  número. Para anotar una venta bastan las claves públicas; por eso se puede
-  vender desde cualquier dispositivo con sesión.
+Cada rifa tiene una clave AES-GCM de 256 bits que genera el navegador de la
+organizadora al crearla. El nombre y el contacto de cada venta se cifran con
+ella antes de enviarlos; Supabase guarda solo el texto cifrado.
 
 #### Los links
 
 | Link | Quién lo tiene | Para qué |
 |---|---|---|
 | `/<uuid>` | Cualquiera | Ver la rifa, copiar los datos de transferencia, ver el sorteo |
-| `/<uuid>/organizar#k=…` | Solo la organizadora | Leer todo en un dispositivo nuevo |
-| `/<uuid>/vender#k=…` | Cada vendedora el suyo | Leer a sus compradores en un dispositivo nuevo |
+| `/<uuid>/organizar#k=…` | Solo la organizadora | Administrar la rifa en un dispositivo |
+| `/<uuid>/vender#k=…&i=…` | Cada vendedora el suyo | Aceptar la invitación y vender en un dispositivo |
 
 - Al abrir un link con clave, el navegador la guarda y la borra de la barra de
   direcciones. El botón «Compartir rifa» siempre entrega `/<uuid>`.
 - El servidor no envía links con clave. Los manda la organizadora desde su
-  teléfono, por WhatsApp o desde su propio correo; la app le prepara el mensaje.
+  teléfono, por WhatsApp o copiándolos.
 - Al crear la rifa, la app obliga a guardar el link de organizadora (un paso de
   «Ya lo guardé») y explica que es lo único que no se puede recuperar.
-- Desde un dispositivo que ya tiene la clave se puede volver a ver el propio
-  link. La organizadora puede volver a copiar el de cualquier vendedora.
-- En un dispositivo sin clave, los nombres aparecen tapados con el aviso «Abre
-  el link que te mandó tu organizadora». La vendedora tiene un botón «Pedirle mi
-  link», que deja un aviso en el panel de la organizadora.
+- La organizadora puede volver a copiar su link y el de cualquier vendedora
+  desde un dispositivo que tenga la clave.
+- En un dispositivo sin clave no se ven los nombres ni se puede vender; la app
+  dice qué link abrir.
 
-#### Vínculo de la vendedora
+#### Vendedoras
 
-La organizadora escribe el correo de la vendedora; el servidor guarda solo su
-HMAC, con una clave en Supabase Vault, para que no se pueda adivinar probando
-correos. Al entrar con Google, `aceptar_invitacion(rifa_id)` compara el HMAC de
-su correo y la vincula. Las políticas RLS entregan los datos cifrados de una
-venta solo a la organizadora y a la vendedora para quien se cifró.
+- La organizadora aprieta «Invitar vendedora» y le pone un nombre para
+  reconocerla. Su navegador genera un código de invitación al azar; el servidor
+  guarda solo su SHA-256. El código va en el link de la vendedora (`i=…`).
+- La vendedora abre el link y entra con Google. `aceptar_invitacion` compara el
+  hash del código y la vincula a esa invitación, una sola vez.
+- Cualquier vendedora puede marcar cualquier número libre; queda registrado
+  quién lo vendió. Sin rangos de números en la primera versión.
+- RLS le entrega a cada vendedora el texto cifrado solo de sus propias ventas.
+  La organizadora ve todas.
 
 #### Lo demás
 
 - Los correos de las cuentas quedan en claro en `auth.users`, porque lo exige el
   login de Google; la política de privacidad lo dice.
 - Al registrar a quien compra se muestra un aviso de consentimiento. Hay
-  política de privacidad y un canal para pedir el borrado.
-- Los datos cifrados se borran 3 meses después del cierre.
+  política de privacidad y un correo para pedir el borrado.
+- Los datos cifrados se borran 3 meses después del término de la rifa, y la
+  rifa, al año.
 
 ### Consecuencias
 
 - Quien administra Rifita ve rifas, números pagados, quién marcó cada uno,
   correos de las cuentas y texto cifrado. No ve nombres ni contactos, tampoco
-  entrando a la cuenta de alguien, porque las claves no están en el servidor.
+  entrando a la cuenta de alguien, porque la clave no está en el servidor.
+- Una vendedora tiene la clave de toda la rifa. No ve las ventas de las demás
+  porque RLS no le entrega ese texto cifrado, pero eso depende del servidor, no
+  de la criptografía. Con claves por vendedora (opción 6) dejaría de depender.
 - Si la organizadora pierde su link y todos sus dispositivos, los nombres ya no
-  se pueden leer. Los números pagados y el sorteo siguen funcionando.
-- Si una vendedora deja de serlo, pierde el acceso al texto cifrado por RLS, y
-  las ventas nuevas ya no se cifran para ella.
-- Quien controle el servidor podría cambiar una clave pública por una propia
-  para leer las ventas **futuras**. Los dispositivos con clave privada comprueban
-  que su clave pública en el servidor coincida, y la organizadora comprueba las
-  de sus vendedoras; si algo no cuadra, la app avisa y no cifra.
+  se pueden leer, salvo desde el dispositivo de alguna vendedora. Los números
+  pagados y el sorteo siguen funcionando.
+- Para vender en un dispositivo nuevo hay que abrir el link una vez.
 - Quien controle el JavaScript que se sirve puede leer los datos ya descifrados
   en el navegador. Se acota con una CSP estricta, sin scripts de terceros, con
-  `main` protegido y dependencias fijadas (ver [Stack](#stack)). La promesa honesta es:
-  «con el código publicado en este repositorio, nadie que administre Rifita
-  puede leer estos datos».
+  `main` protegido y dependencias fijadas (ver [Stack](#stack)). La promesa
+  honesta es: «con el código publicado en este repositorio, nadie que
+  administre Rifita puede leer estos datos».
 - Pantallazos y reenvíos quedan fuera de lo que la app puede impedir.
 
 ### Qué la revertiría
 
-Que abrir el link en cada dispositivo nuevo resulte demasiado engorroso. La
-primera alternativa es un código de palabras generado por la app (por ejemplo
-`pera-nube-lago-tren-sol`), opcional junto al link, para abrir los nombres en
-dispositivos sin WhatsApp. Las passkeys vuelven a ser una opción si la mayoría
-de los teléfonos llega a soportar PRF.
+Que las vendedoras necesiten vender desde dispositivos sin el link, o que se
+quiera que la separación entre vendedoras no dependa del servidor: entonces se
+pasa a claves por vendedora (opción 6). Si abrir el link en cada dispositivo
+resulta engorroso, un código de palabras generado por la app puede reemplazarlo.
 
 ## Sorteo
 
@@ -252,13 +245,17 @@ con sesión: el sorteo usa los números pagados, no los nombres.
 
 Al apretar «Sortear»:
 
-1. se congela y publica la lista de números pagados (`participantes`);
-2. se fija una ronda de drand unos 30 segundos en el futuro;
-3. la Edge Function `sortear` espera esa ronda, verifica su firma y calcula los
-   ganadores con un algoritmo determinista publicado en
+1. la función `fijar_sorteo` congela la lista de números pagados
+   (`participantes`) y fija una ronda de drand (cadena *quicknet*, una ronda cada
+   3 segundos) unos 30 segundos en el futuro. Se hace una sola vez por rifa: no
+   se puede volver a sortear hasta que salga un resultado que convenga;
+2. cuando llega esa ronda, el navegador de la organizadora la trae de drand y
+   calcula los ganadores con el algoritmo determinista de
    `web/src/lib/sorteo.ts`: en orden de premios, cada ganador sale de un SHA-256
    de la aleatoriedad y el número de premio, sobre los participantes que quedan.
-   Un número no gana dos veces.
+   Un número no gana dos veces;
+3. `publicar_sorteo` guarda la aleatoriedad y los ganadores, que tienen que ser
+   participantes.
 
 La página `/<uuid>/verificar` vuelve a traer la ronda de drand y recalcula el
 resultado en el navegador de cualquiera.
@@ -270,8 +267,14 @@ verificable; el nombre no.
 
 ### Consecuencias
 
-El sorteo depende de que drand esté disponible; si no lo está, se reintenta con
-una ronda nueva, sin cambiar los participantes. La cadena de drand y su clave
+El servidor no puede comprobar la aleatoriedad que publica la organizadora,
+porque Postgres no consulta drand; lo comprueba `/<uuid>/verificar`, que la trae
+de drand y recalcula. En la primera versión no se verifica la firma BLS de la
+ronda: se confía en los servidores públicos de drand. Verificarla, o hacer el
+cálculo en una Edge Function, es el siguiente paso.
+
+El sorteo depende de que drand esté disponible; si no lo está, se reintenta más
+tarde con la misma ronda. La cadena de drand y su clave
 pública quedan fijadas en el código. El algoritmo, una vez en uso, no se cambia
 sin versionarlo, para que los sorteos pasados se sigan pudiendo verificar.
 
@@ -330,9 +333,9 @@ La app es chica: unas ocho pantallas, formularios y una grilla de números.
 #### Backend
 
 **Supabase**: Auth con Google (solo el correo), Postgres con Row Level Security
-como única capa de permisos, `pg_cron` para avisos y borrados del ciclo de vida,
-una Edge Function para el sorteo. La baja de cuenta es una función de
-Postgres (`dar_de_baja`), que borra la cuenta y, en cascada, sus rifas.
+como única capa de permisos, `pg_cron` para los borrados del ciclo de vida, y
+funciones de Postgres para lo que necesita reglas propias (invitaciones, sorteo,
+baja de cuenta). Sin Edge Functions en la primera versión.
 
 #### Frontend
 
